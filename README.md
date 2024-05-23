@@ -1,21 +1,38 @@
-# Emby2Jelly
+# Jellyfin2Emby
 
-Python script to recreate users from emby to jellyfin and migrate their watched content for movies and TV shows.
+[English Documentation](./README.en.md)
 
-the script work by asking emby what each user's watched list, and then search them on Jellyfin by their ProviderIds (theTvdb, Imdb...)
-if ProviderIds are not available, it try to recognize your media by names (`Les Animaux fantastiques : Les Crimes de Grindelwald`) 
+> 将Jellyfin用户以及用户观看记录迁移到Emby
 
-***Be sure to have your content identified (It's prefered to refresh missing metadatas on your Library before) ***
+该脚本基于[Marc-Vieg/Emby2Jelly](https://github.com/Marc-Vieg/Emby2Jelly)修改为Jellyfin2Emby
 
+已知缺陷：
 
-Tested with Emby server Version : **4.4.0.40**
-and Jellyfin server Version : **10.5.4**
+1. 未能准确迁移【继续观看】中播放具体进度；
+   迁移后为该影片(剧集)未播放
+   例如：jellyfin A剧集播放到S01E03的10分钟，迁移后为Emby A剧集S01E03未播放
+2. 未能迁移【喜爱】的影片记录
+3. 密码未能迁移
 
+---
 
-!! Be sure to make emby and Jelly search for missing metadata, Even each Tvshow Episode need to have their providerIds identified to be correctly migrated
+### 测试版本
+
+- jellyfin：10.8.13
+
+- emby：4.8.7.0
+
+---
+
+### 检查
+
+**确保你的内容已经被识别（建议在你的库中刷新缺失的元数据）**
+
+确保让Emby和Jellyfin搜索缺失的元数据，甚至每个电视剧集都需要有其providerIds才能被正确迁移。
 
 ---
 ### Requirements
+
 python3
 ```
 json
@@ -25,141 +42,62 @@ configobj
 time
 getpass
 ```
-## Configuration
-simply edit settings.ini with your emby and jelly url and api keys
+---
+
+### 配置
+
+编辑settings.ini文件并添加你的Emby和Jellyfin的URL和API密钥
 ```
 [Emby]
 EMBY_APIKEY = aaaabbbbbbbcccccccccccccdddddddd
-EMBY_URLBASE = http://127.0.0.1:8096/
+EMBY_URLBASE = http://127.0.0.1:8097/
+EMBY_PASSWORD = passwordAZ
 [Jelly]
 JELLY_APIKEY = eeeeeeeeeeeeeeeffffffffffffffffggggggggg
-JELLY_URLBASE = http://127.0.0.1:8096/ 
+JELLY_URLBASE = http://127.0.0.1:8096/
 
-# do not forget the trailing slash 
+# 结尾需要有斜杠/
 
-## if you have a custom path, or a reverse proxy, do not forget /emby/ or /jelly/ 
+## 如果你有自定义路径或者反向代理，不要忘记 /emby/ 或者 /jelly/
 ```
 
 ---
 
-## Using
-```
-python3 APImain.py 
-Migrate from Emby to Jellyfin (or Jellyfin to Jellyfin)
-Option Argument : (only one file can be used at a time, one run to a file, then one run from a file)
-			--tofile [file]     run the script saving viewed statuses to a file instead of sending them to destination server
-			--fromfile [file]       run the script with a file as source server and send viewed statuses to destination server
-			--new-user-pw "change-your-password-9efde123"
-```
+### 使用
 
-### users
-the script will get user list from Emby,
+从jellyfin迁移到emby
 
 ```
-[user@computer Emby2Jelly]$ python3 APImain.py 
-Emby has 1 Users
-TestUser (1 / 1) : aaaabbbbbcccc4555577779999444422
-
+python3 jellyfin2emby.py
+参数：（一次只能使用一个文件，每次运行一个文件，一次从文件运行）
+		--tofile [文件]     运行脚本，将查看状态保存到文件而不是发送到目标服务器
+		--fromfile [文件]   运行脚本，以文件作为源服务器并将查看状态发送到目标服务器
+		--new-user-pw "change-your-password-9efde123"
 ```
 
-### Emby part
-then very rapidly, it will get the viewed contend for all users from emby
+（密码顺序，优先new-user-pw参数，其次settings.ini中EMBY_PASSWORD，最后则是运行时手动输入）
 
-`##### EmbySync Done #####
-`
+---
 
-### Jelly part
-the script will work user by user (create them on Jelly if they don't already exist),
-asking Jelly for their viewable content 
+### 结果
 
-**When creating users, the script will ask you for password and confirmation.**
+脚本将生成一个RESULTS.txt，包含每个用户的摘要和未找到的媒体列表：
 ```
-TestUser ..  Creating
-you will now enter password for user TestUser
-Password : 
-confirm   : 
-TestUser  Created
-```
+                      ### Jelly2Emby ###
 
 
-
-Identify your media and tell to jelly the user already seen it
-
-
-working by name when there is no ProviderId
+fish (Jellyfin) is  fish (Emby)
+user0 Created on Emby
 
 
-```
-found by name 101 - Towne Hall Follies
-found by name 102 - The Quail Hunt
-
-```
-Working by Id the major part
-```
-OK ! 1/17 - 101 - Towne Hall Follies has been seen by TestUser
-
-OK ! 2/17 - Night Mission: Stealing Friends Back has been seen by TestUser
-
-OK ! 3/17 - 102 - The Quail Hunt has been seen by TestUser
-
-OK ! 4/17 - Zombie Island... In Space has been seen by TestUser
-
-OK ! 5/17 - An American Story has been seen by TestUser
-
-OK ! 6/17 - Babysitting Unibaby has been seen by TestUser
-
-OK ! 7/17 - Birthday Month has been seen by TestUser
-
-OK ! 8/17 - The Rabbit Who Broke All the Rules has been seen by TestUser
-
-OK ! 9/17 - No More Bad Guys has been seen by TestUser
-
-OK ! 10/17 - Super Axe has been seen by TestUser
-
-OK ! 11/17 - When Night Creatures Attack has been seen by TestUser
-
-OK ! 12/17 - 28 Days Before has been seen by TestUser
-
-OK ! 13/17 - Taxi Cop has been seen by TestUser
-
-OK ! 14/17 - The Dumb List has been seen by TestUser
-
-OK ! 15/17 - 2 Guns has been seen by TestUser
-
-OK ! 16/17 - 2001 : l'odyssée de l'espace has been seen by TestUser
-
-OK ! 17/17 - Alabama Monroe has been seen by TestUser
-
-```
-## Result
-
-The script will generate a RESULTS.txt with summary for each user and a list of the media not found : 
-```
-                      ### Emby2Jelly ###
-
-
-TestUser Created on Jelly
-
-
---- TestUser ---
-Medias Migrated : 17 / 18
-Unfortunately, I Missed 1 Medias :
-[{'Type': 'Episode', 'EmbyId': '97723', 'JellyId': None, 'Name': 'La Griffe du passé', 'ProviderIds': {'Tvdb': '6218102', 'Imdb': 'tt5989942'}}]
+--- fish ---
+Medias Migrated : 71 / 71
+--- user0 ---
+Medias Migrated : 1 / 1
 ```
 
-### Timing
-just start the script, sip a beer and i'll be done
-example with a decent user (2986 media seen)
+---
 
-```
-$time python3 APImain.py
-real	5m22,223s
-user	0m43,433s
-sys	0m1,485s
-```
+### 感谢
 
-
-# CONTRIBUTE
-
-Feel free to contribute however you want, I will be a pleasure !
-
+再次感谢Emby2Jelly原作者Marc-Vieg(CobayeGunther)
